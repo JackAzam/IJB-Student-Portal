@@ -1,0 +1,1 @@
+{% extends 'portal/base.html' %}{% block content %}<div class="page-heading"><div><div class="eyebrow">IJB PORTAL</div><h1>{{ heading }}</h1></div></div><section class="panel form-panel"><form method="post">{% csrf_token %}{{ form.as_p }}<button class="primary">Simpan</button> <a class="secondary" href="{% url 'dashboard' %}">Batal</a></form></section>{% endblock %}
