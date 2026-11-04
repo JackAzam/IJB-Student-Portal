@@ -7,18 +7,34 @@ from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
 from django.utils import timezone
 
+
 class User(AbstractUser):
     class Role(models.TextChoices):
         STUDENT = 'STUDENT', 'Student'
         STAFF = 'STAFF', 'Staff'
         MANAGER = 'MANAGER', 'Manager'
-    role = models.CharField(max_length=12, choices=Role.choices, default=Role.STUDENT)
+
+    role = models.CharField(
+        max_length=12,
+        choices=Role.choices,
+        default=Role.STUDENT
+    )
     phone = models.CharField(max_length=30, blank=True)
     staff_code_used = models.BooleanField(default=False)
 
+    def save(self, *args, **kwargs):
+        if self.is_superuser:
+            self.role = self.Role.MANAGER
+            self.is_staff = True
+
+        super().save(*args, **kwargs)
+
     @property
     def is_staff_member(self):
-        return self.role in {self.Role.STAFF, self.Role.MANAGER} or self.is_superuser
+        return (
+            self.role in {self.Role.STAFF, self.Role.MANAGER}
+            or self.is_superuser
+        )
 
 
 class StaffRegistrationCode(models.Model):
