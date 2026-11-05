@@ -94,17 +94,25 @@ Staff can register and log in immediately. Their account receives a
 baseline staff role, while sensitive or administrative permissions
 remain restricted.
 
-Staff can, according to assigned permissions: - Review and maintain
-candidate records. - Create and manage TO/JO records and job
-opportunities. - Assign program pathways and applicable requirements. -
-Record exam bookings, results, attempts, and retake dates. - Manage
-medical appointments and results. - Create interview schedules and
-invitations. - Record interview outcomes and offers. - Track passport
-processing and recommendation-letter requests. - Manage student document
-checklists, uploads, reviews, and print retrieval. - Manage student
-support tickets. - Record TSK/KUMIAI PIC visits. - View operational
-dashboards and timelines. - Record that placement information has been
-communicated to the relevant TSK/KUMIAI and receiver company.
+A baseline staff role does not grant access to all student records.
+Access to individual student records and workflow items must be based
+on explicit assignments or other permissions granted by management.
+
+Staff can, according to assigned permissions:
+
+- Review and maintain candidate records.
+- Create and manage TO/JO records and job opportunities.
+- Assign program pathways and applicable requirements.
+- Record exam bookings, results, attempts, and retake dates.
+- Manage medical appointments and results.
+- Create interview schedules and invitations.
+- Record interview outcomes and offers.
+- Track passport processing and recommendation-letter requests.
+- Manage student document checklists, uploads, reviews, and print retrieval.
+- Manage student support tickets.
+- Record TSK/KUMIAI PIC visits.
+- View operational dashboards and timelines.
+- Record that placement information has been communicated to the relevant TSK/KUMIAI and receiver company.
 
 ### 4.3 Management
 
@@ -627,3 +635,98 @@ monitoring.
 
 **Phase 4 --- Refinement:** Advanced analytics, configurable workflow
 automation, richer notifications, and operational improvements.
+
+## 14. v1.02 — Student self-service and workflow improvements
+
+### 14.1 Staff access clarification
+
+Staff registration allows a staff member to log in under the baseline
+staff role. It does not automatically grant access to every student's
+records. Access to student records and workflow items must follow
+explicit staff assignments or other permissions granted by management.
+
+Managers retain cross-team oversight according to their permissions.
+Superusers retain system and permission administration responsibilities.
+
+### 14.2 Student Workflow Board
+
+- **FR-125 (P0):** Provide a staff workflow board that groups student
+  work items by operational stage.
+- **FR-126 (P0):** Work items may represent existing student processes,
+  including passport cases, exam preparation, document requirements,
+  and support tickets.
+- **FR-127 (P0):** Each work item must identify the student, work
+  category, responsible staff member, due date (if applicable), current
+  stage, and latest activity.
+- **FR-128 (P0):** Authorized staff can assign work, update workflow
+  stages, set follow-up dates, and record progress.
+- **FR-129 (P0):** Managers can view cross-team work, monitor staff
+  workload, and identify overdue or blocked items.
+- **FR-130 (P0):** Staff can access only students and work items covered
+  by their assigned permissions.
+- **FR-131 (P0):** Students can view their own relevant progress and next
+  actions, but cannot access internal staff notes or administrative
+  information.
+- **FR-132 (P0):** Workflow activities, including assignments and stage
+  changes, must be recorded with the responsible user and timestamp.
+- **FR-133 (P0):** The workflow board must reference existing process
+  records rather than creating duplicate authoritative records or
+  statuses.
+- **FR-134 (P0):** Work items should be generated from existing records
+  when possible. Authorized staff may create separate follow-up tasks
+  when work cannot be represented by an existing process.
+
+### 14.3 Workflow board stages
+
+The workflow board uses operational stages that are separate from the
+status of the underlying process:
+
+- New / Incoming
+- Needs Attention
+- Waiting for Student
+- Processing
+- Waiting for External Party
+- Ready / Completed
+
+A workflow stage describes where work stands operationally. It must
+not replace the authoritative status of a passport case, exam attempt,
+document, or support ticket.
+
+For example, a passport case may have the status `PROCESSING` while
+its workflow item is in `Waiting for External Party`.
+
+Stage changes must preserve activity history. The board must not
+silently change the underlying process status when only the operational
+stage is updated.
+
+### 14.4 v1.02 acceptance criteria
+
+The v1.02 workflow improvements are acceptable when:
+
+1. Staff can view workflow items only for students they are assigned
+   or explicitly authorized to manage.
+2. Managers can view cross-team workflow items and staff workloads.
+3. Students can view their own relevant progress but cannot view
+   another student's workflow items or internal staff notes.
+4. Authorized staff can assign work, change workflow stages, and
+   record follow-up dates.
+5. Workflow stage changes and assignments are recorded in activity
+   history with the responsible user and timestamp.
+6. Workflow items remain linked to their authoritative process records,
+   and changing a board stage does not create conflicting process
+   statuses.
+7. Existing student, exam, passport, document, and ticket permissions
+   remain enforced when accessing the workflow board.
+8. Existing v1.01 tests continue to pass as regression tests.
+
+### 14.5 Delivery scope
+
+**v1.02 — Student self-service and workflow improvements:**
+
+Student workflow board, explicit staff-to-student assignments,
+workflow activity history, student next-action visibility, and improved
+staff workload monitoring.
+
+The workflow board is an operational view over existing student
+processes. It must not duplicate or replace the authoritative records
+for passports, exams, documents, schedules, or support tickets.
