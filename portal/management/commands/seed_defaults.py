@@ -1,19 +1,66 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.models import ContentType
 from portal.models import ExamRule, JobType, DocumentRequirement
 
 class Command(BaseCommand):
     help = 'Create initial IJB exam rules, job types, and configurable document checklist.'
     def handle(self, *args, **options):
         staff_group, _ = Group.objects.get_or_create(name='LPK Staff')
-        staff_models = ['studentprofile','jobtype','tskkumiai','tskcontact','receivingcompany','order','studentorderassignment','examrule','examattempt','medicalcheckup','interview','offer','passportcase','documentrequirement','studentdocument','calendarevent','supportticket','ticketreply','tskvisit','placementcommunication']
-        for model_name in staff_models:
-            ct = ContentType.objects.filter(app_label='portal', model=model_name).first()
-            if ct:
-                perms = Permission.objects.filter(content_type=ct, codename__in=[f'view_{model_name}',f'add_{model_name}',f'change_{model_name}'])
-                staff_group.permissions.add(*perms)
-        self.stdout.write('LPK Staff group permissions: configured (no delete/superuser permissions)')
+        staff_group.permissions.clear()
+        self.stdout.write(
+            'LPK Staff group permissions: cleared (portal access only)'
+        )
+
+        manager_group, _ = Group.objects.get_or_create(name='LPK Managers')
+
+        manager_models = [
+            'studentprofile',
+            'studentstaffassignment',
+            'studentdocument',
+            'jobtype',
+            'tskkumiai',
+            'tskcontact',
+            'receivingcompany',
+            'order',
+            'studentorderassignment',
+            'examrule',
+            'examattempt',
+            'medicalcheckup',
+            'interview',
+            'offer',
+            'passportcase',
+            'documentrequirement',
+            'calendarevent',
+            'supportticket',
+            'ticketreply',
+            'tskvisit',
+            'placementcommunication',
+            'auditlog',
+        ]
+
+        manager_permissions = []
+
+        for model_name in manager_models:
+            actions = (
+                ['view']
+                if model_name == 'auditlog'
+                else ['view', 'add', 'change']
+            )
+
+            for action in actions:
+                permission = Permission.objects.get(
+                    content_type__app_label='portal',
+                    content_type__model=model_name,
+                    codename=f'{action}_{model_name}',
+                )
+                manager_permissions.append(permission)
+
+        manager_group.permissions.set(manager_permissions)
+
+        self.stdout.write(
+            f'LPK Managers group permissions: '
+            f'{len(manager_permissions)} assigned'
+        )
         for code, name in [('JFT_A2','JFT A2'),('JLPT_N4','JLPT N4'),('SSW','SSW Skill Exam')]:
             obj, created = ExamRule.objects.get_or_create(code=code, defaults={'name':name})
             self.stdout.write(f'{name}: {"created" if created else "exists"}')

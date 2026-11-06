@@ -98,6 +98,50 @@ class StudentProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self): return self.user.get_full_name() or self.user.username
 
+class StudentStaffAssignment(models.Model):
+    student = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name='staff_assignments',
+    )
+    staff = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='student_assignments',
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='created_student_assignments',
+    )
+    assigned_at = models.DateTimeField(default=timezone.now)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'staff'],
+                name='unique_student_staff_assignment',
+            )
+        ]
+        ordering = ['-assigned_at']
+
+    def clean(self):
+        super().clean()
+        if self.staff_id:
+            staff_role = self.staff.role
+            if staff_role not in {
+                User.Role.STAFF,
+                User.Role.MANAGER,
+            } and not self.staff.is_superuser:
+                from django.core.exceptions import ValidationError
+                raise ValidationError({
+                    'staff': 'Only staff members or managers can be assigned.'
+                })
+
+    def __str__(self):
+        return f'{self.student} → {self.staff}'
+
 class JobType(models.Model):
     name = models.CharField(max_length=100, unique=True)
     ssw_category_code = models.CharField(max_length=50, blank=True)
@@ -331,6 +375,7 @@ class TicketReply(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_internal = models.BooleanField(default=False)
 
 class TskVisit(models.Model):
     organization = models.ForeignKey(TskKumiai, on_delete=models.PROTECT)

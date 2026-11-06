@@ -1,9 +1,9 @@
-from django.contrib import admin
+from portal.admin_site import ijb_admin_site
 from django.urls import path
 from portal import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', ijb_admin_site.urls),
     path('', views.dashboard, name='dashboard'),
     path('register/', views.register, name='register'),
     path('login/', views.PortalLoginView.as_view(), name='login'),

@@ -1,19 +1,52 @@
 import secrets
 from django.contrib import admin, messages
+from .admin_site import ijb_admin_site
 from django.utils import timezone
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from . import models
 from .services import select_offer
 
-@admin.register(models.User)
+@admin.register(models.User, site=ijb_admin_site)
 class UserAdmin(BaseUserAdmin):
-    fieldsets = BaseUserAdmin.fieldsets + (('IJB Portal', {'fields': ('role','phone','staff_code_used')}),)
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (('IJB Portal', {'fields': ('role','phone')}),)
-    list_display = ('username','email','first_name','last_name','role','is_active')
-    list_filter = ('role','is_active')
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ('IJB Portal', {
+            'fields': ('role', 'phone', 'staff_code_used')
+        }),
+    )
 
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        ('IJB Portal', {
+            'fields': ('role', 'phone')
+        }),
+    )
 
-@admin.register(models.StaffRegistrationCode)
+    list_display = (
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'role',
+        'is_active',
+    )
+
+    list_filter = ('role', 'is_active')
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+@admin.register(models.StaffRegistrationCode, site=ijb_admin_site)
 class StaffRegistrationCodeAdmin(admin.ModelAdmin):
     list_display = ('id', 'created_by', 'created_at', 'expires_at', 'used_at', 'used_by', 'revoked', 'status')
     list_filter = ('revoked', 'created_at', 'expires_at', 'used_at')
@@ -59,32 +92,32 @@ class StaffRegistrationCodeAdmin(admin.ModelAdmin):
             return self.readonly_fields
         return ('code_hash', 'created_by', 'created_at', 'used_at', 'used_by')
 
-@admin.register(models.StudentProfile)
+@admin.register(models.StudentProfile, site=ijb_admin_site)
 class StudentProfileAdmin(admin.ModelAdmin):
     list_display = ('user','origin','program','updated_at')
     search_fields = ('user__username','user__first_name','user__last_name','user__email')
     list_filter = ('origin','program')
 
-@admin.register(models.StudentDocument)
+@admin.register(models.StudentDocument, site=ijb_admin_site)
 class StudentDocumentAdmin(admin.ModelAdmin):
     list_display = ('student','requirement','version','status','visible_to_student','due_date','uploaded_at')
     list_filter = ('status','visible_to_student','requirement__pathway')
     search_fields = ('student__user__username','student__user__first_name','requirement__name')
     readonly_fields = ('version','uploaded_at')
 
-@admin.register(models.ExamAttempt)
+@admin.register(models.ExamAttempt, site=ijb_admin_site)
 class ExamAttemptAdmin(admin.ModelAdmin):
     list_display = ('student','rule','exam_date','status','earliest_retake_date')
     list_filter = ('status','rule')
     search_fields = ('student__user__username','student__user__first_name')
 
-@admin.register(models.Interview)
+@admin.register(models.Interview, site=ijb_admin_site)
 class InterviewAdmin(admin.ModelAdmin):
     list_display = ('student','order','scheduled_at','status')
     list_filter = ('status','order__pathway','order__job_type')
     search_fields = ('student__user__username','order__code','order__company__name')
 
-@admin.register(models.Offer)
+@admin.register(models.Offer, site=ijb_admin_site)
 class OfferAdmin(admin.ModelAdmin):
     list_display = ('interview','status','selected_at')
     list_filter = ('status','interview__order__pathway')
@@ -100,13 +133,13 @@ class OfferAdmin(admin.ModelAdmin):
                 self.message_user(request, f'Offer #{offer.pk} tidak berasal dari interview Passed.')
         self.message_user(request, f'{selected} offer berhasil dipilih.')
 
-@admin.register(models.SupportTicket)
+@admin.register(models.SupportTicket, site=ijb_admin_site)
 class SupportTicketAdmin(admin.ModelAdmin):
     list_display = ('subject','student','category','status','assigned_to','created_at')
     list_filter = ('status','category')
     search_fields = ('subject','student__user__username','description')
 
-@admin.register(models.CalendarEvent)
+@admin.register(models.CalendarEvent, site=ijb_admin_site)
 class CalendarEventAdmin(admin.ModelAdmin):
     list_display = ('title','student','kind','starts_at','location')
     list_filter = ('kind','starts_at')
@@ -114,14 +147,14 @@ class CalendarEventAdmin(admin.ModelAdmin):
 
 # Register the operational models with the standard, searchable admin UI.
 for model in [models.JobType, models.TskKumiai, models.TskContact, models.ReceivingCompany,
-              models.Order, models.StudentOrderAssignment, models.ExamRule, models.MedicalCheckup,
-              models.PassportCase, models.DocumentRequirement, models.TicketReply,
+              models.Order, models.StudentOrderAssignment, models.StudentStaffAssignment,
+              models.ExamRule, models.MedicalCheckup, models.PassportCase,
+              models.DocumentRequirement, models.TicketReply,
               models.TskVisit, models.PlacementCommunication, models.AuditLog]:
     try:
-        admin.site.register(model)
+        ijb_admin_site.register(model)
     except admin.sites.AlreadyRegistered:
         pass
-
-admin.site.site_header = 'IJB Student Portal'
-admin.site.site_title = 'IJB Portal Admin'
-admin.site.index_title = 'Manajemen Operasional LPK'
+ijb_admin_site.site_header = 'IJB Student Portal'
+ijb_admin_site.site_title = 'IJB Portal Admin'
+ijb_admin_site.index_title = 'Manajemen Operasional LPK'

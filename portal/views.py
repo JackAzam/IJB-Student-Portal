@@ -26,6 +26,19 @@ def get_student_profile(user):
     profile, _ = StudentProfile.objects.get_or_create(user=user)
     return profile
 
+
+def get_accessible_students(user):
+    if user.is_superuser or user.role == 'MANAGER':
+        return StudentProfile.objects.all()
+
+    if user.role == 'STAFF':
+        return StudentProfile.objects.filter(
+            staff_assignments__staff=user,
+            staff_assignments__active=True,
+        ).distinct()
+
+    return StudentProfile.objects.none()
+
 def register(request):
     if request.user.is_authenticated: return redirect('dashboard')
     form = RegistrationForm(request.POST or None)
@@ -45,13 +58,29 @@ class UserRole:
 @login_required
 def dashboard(request):
     if is_staff_user(request.user):
+        students = get_accessible_students(request.user)
+
         context = {
             'staff_mode': True,
-            'student_count': StudentProfile.objects.count(),
-            'open_tickets': SupportTicket.objects.exclude(status__in=['RESOLVED','CLOSED']).count(),
-            'upcoming_events': CalendarEvent.objects.filter(starts_at__gte=timezone.now()).order_by('starts_at')[:8],
-            'pending_documents': StudentDocument.objects.filter(status__in=['REQUESTED','UPLOADED','REVIEW']).count(),
-            'recent_tickets': SupportTicket.objects.select_related('student__user').order_by('-created_at')[:6],
+            'student_count': students.count(),
+            'open_tickets': SupportTicket.objects.filter(
+                student__in=students
+            ).exclude(
+                status__in=['RESOLVED', 'CLOSED']
+            ).count(),
+            'upcoming_events': CalendarEvent.objects.filter(
+                student__in=students,
+                starts_at__gte=timezone.now(),
+            ).order_by('starts_at')[:8],
+            'pending_documents': StudentDocument.objects.filter(
+                student__in=students,
+                status__in=['REQUESTED', 'UPLOADED', 'REVIEW'],
+            ).count(),
+            'recent_tickets': SupportTicket.objects.filter(
+                student__in=students
+            ).select_related(
+                'student__user'
+            ).order_by('-created_at')[:6],
         }
     else:
         profile = get_student_profile(request.user)
@@ -78,10 +107,23 @@ def profile(request):
 @login_required
 def events(request):
     if is_staff_user(request.user):
-        items = CalendarEvent.objects.select_related('student__user').order_by('starts_at')
+        students = get_accessible_students(request.user)
+        items = CalendarEvent.objects.filter(
+            student__in=students
+        ).select_related(
+            'student__user'
+        ).order_by('starts_at')
     else:
         items = get_student_profile(request.user).events.order_by('starts_at')
-    return render(request, 'portal/events.html', {'items': items, 'staff_mode': is_staff_user(request.user)})
+
+    return render(
+        request,
+        'portal/events.html',
+        {
+            'items': items,
+            'staff_mode': is_staff_user(request.user),
+        },
+    )
 
 @login_required
 def event_create(request):
@@ -97,8 +139,25 @@ def event_create(request):
 
 @login_required
 def tickets(request):
-    items = SupportTicket.objects.select_related('student__user','assigned_to') if is_staff_user(request.user) else get_student_profile(request.user).tickets.all()
-    return render(request, 'portal/tickets.html', {'items': items.order_by('-created_at'), 'staff_mode': is_staff_user(request.user)})
+    if is_staff_user(request.user):
+        students = get_accessible_students(request.user)
+        items = SupportTicket.objects.filter(
+            student__in=students
+        ).select_related(
+            'student__user',
+            'assigned_to',
+        )
+    else:
+        items = get_student_profile(request.user).tickets.all()
+
+    return render(
+        request,
+        'portal/tickets.html',
+        {
+            'items': items.order_by('-created_at'),
+            'staff_mode': is_staff_user(request.user),
+        },
+    )
 
 @login_required
 def ticket_create(request):
@@ -113,15 +172,42 @@ def ticket_create(request):
 @login_required
 def documents(request):
     if is_staff_user(request.user):
-        items = StudentDocument.objects.select_related('student__user','requirement').order_by('-uploaded_at')
+        students = get_accessible_students(request.user)
+        items = StudentDocument.objects.filter(
+            student__in=students
+        ).select_related(
+            'student__user',
+            'requirement',
+        ).order_by('-uploaded_at')
     else:
-        items = get_student_profile(request.user).documents.filter(visible_to_student=True).select_related('requirement')
-    return render(request, 'portal/documents.html', {'items': items, 'staff_mode': is_staff_user(request.user)})
+        items = get_student_profile(request.user).documents.filter(
+            visible_to_student=True
+        ).select_related('requirement')
+
+    return render(
+        request,
+        'portal/documents.html',
+        {
+            'items': items,
+            'staff_mode': is_staff_user(request.user),
+        },
+    )
 
 @login_required
 def document_download(request, pk):
-    document = get_object_or_404(StudentDocument.objects.select_related('student__user'), pk=pk)
-    if not is_staff_user(request.user) and (document.student.user_id != request.user.id or not document.visible_to_student):
+    document = get_object_or_404(
+        StudentDocument.objects.select_related('student__user'),
+        pk=pk,
+    )
+    if is_staff_user(request.user):
+        if not get_accessible_students(request.user).filter(
+            pk=document.student_id
+        ).exists():
+            raise PermissionDenied
+    elif (
+        document.student.user_id != request.user.id
+        or not document.visible_to_student
+    ):
         raise PermissionDenied
     if not document.file: raise Http404('File belum tersedia.')
     path = Path(document.file.path).resolve()
