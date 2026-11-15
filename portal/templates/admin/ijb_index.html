@@ -1,0 +1,347 @@
+
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+<style>
+    .ijb-dashboard {
+        margin-bottom: 30px;
+    }
+
+    .ijb-welcome {
+        background: var(--body-bg, #ffffff);
+        border: 1px solid var(--border-color, #dddddd);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .ijb-welcome h2 {
+        margin: 0 0 8px;
+        font-size: 24px;
+    }
+
+    .ijb-welcome p {
+        margin: 0;
+        color: var(--body-quiet-color, #666666);
+    }
+
+    .ijb-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+
+    .ijb-stat {
+        background: var(--body-bg, #ffffff);
+        border: 1px solid var(--border-color, #dddddd);
+        border-radius: 12px;
+        padding: 20px;
+        min-height: 110px;
+    }
+
+    .ijb-stat-label {
+        color: var(--body-quiet-color, #666666);
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .ijb-stat-value {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--body-fg, #222222);
+    }
+
+    .ijb-stat-icon {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
+    .ijb-section-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 30px 0 8px;
+    }
+
+    .ijb-module-note {
+        color: var(--body-quiet-color, #666666);
+        font-size: 13px;
+        margin-bottom: 22px;
+    }
+
+    .ijb-module-group {
+        margin-bottom: 30px;
+    }
+
+    .ijb-group-heading {
+        margin-bottom: 14px;
+    }
+
+    .ijb-group-heading h3 {
+        font-size: 17px;
+        margin: 0 0 5px;
+    }
+
+    .ijb-group-heading p {
+        font-size: 13px;
+        color: var(--body-quiet-color, #666666);
+        margin: 0;
+    }
+
+    .ijb-module-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fill,
+            minmax(220px, 1fr)
+        );
+        gap: 14px;
+    }
+
+    .ijb-module-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 125px;
+        padding: 17px;
+        background: var(--body-bg, #ffffff);
+        border: 1px solid var(--border-color, #dddddd);
+        border-radius: 12px;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .ijb-module-card:hover {
+        border-color: var(--link-fg, #447e9b);
+        transform: translateY(-2px);
+    }
+
+    .ijb-module-main {
+        display: block;
+        color: var(--body-fg, #222222);
+        text-decoration: none;
+    }
+
+    .ijb-module-main:hover {
+        color: var(--link-hover-color, #205067);
+    }
+
+    .ijb-module-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        margin-bottom: 12px;
+        border-radius: 9px;
+        background: var(--darkened-bg, #eeeeee);
+        font-size: 20px;
+    }
+
+    .ijb-module-name {
+        display: block;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .ijb-module-description {
+        display: block;
+        font-size: 12px;
+        color: var(--body-quiet-color, #666666);
+    }
+
+    .ijb-module-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px solid var(--hairline-color, #eeeeee);
+    }
+
+    .ijb-add-link {
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .ijb-add-link:hover {
+        text-decoration: underline;
+    }
+
+    .ijb-no-modules {
+        padding: 20px;
+        border: 1px dashed var(--border-color, #cccccc);
+        border-radius: 10px;
+        color: var(--body-quiet-color, #666666);
+    }
+
+    @media (max-width: 600px) {
+        .ijb-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ijb-stat {
+            padding: 14px;
+        }
+
+        .ijb-stat-value {
+            font-size: 24px;
+        }
+
+        .ijb-module-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ijb-module-card {
+            padding: 12px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .ijb-module-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="ijb-dashboard">
+
+    <!-- WELCOME -->
+    <section class="ijb-welcome">
+        <h2>Selamat datang di IJB Administration</h2>
+        <p>
+            Pusat pengelolaan operasional LPK,
+            data siswa, dokumen, penempatan, dan aktivitas administrasi.
+        </p>
+    </section>
+
+
+    <!-- OVERVIEW -->
+    <h2 class="ijb-section-title">Operational Overview</h2>
+
+    <div class="ijb-stats">
+
+        <div class="ijb-stat">
+            <div class="ijb-stat-icon">👨‍🎓</div>
+            <div class="ijb-stat-label">Active Students</div>
+            <div class="ijb-stat-value">{{ student_count }}</div>
+        </div>
+
+        <div class="ijb-stat">
+            <div class="ijb-stat-icon">👥</div>
+            <div class="ijb-stat-label">Active Staff</div>
+            <div class="ijb-stat-value">{{ staff_count }}</div>
+        </div>
+
+        <div class="ijb-stat">
+            <div class="ijb-stat-icon">📄</div>
+            <div class="ijb-stat-label">Student Documents</div>
+            <div class="ijb-stat-value">{{ document_count }}</div>
+        </div>
+
+        <div class="ijb-stat">
+            <div class="ijb-stat-icon">🏢</div>
+            <div class="ijb-stat-label">Training / Job Orders</div>
+            <div class="ijb-stat-value">{{ order_count }}</div>
+        </div>
+
+        <div class="ijb-stat">
+            <div class="ijb-stat-icon">📅</div>
+            <div class="ijb-stat-label">Interviews</div>
+            <div class="ijb-stat-value">{{ interview_count }}</div>
+        </div>
+
+        <div class="ijb-stat">
+            <div class="ijb-stat-icon">🎫</div>
+            <div class="ijb-stat-label">Support Tickets</div>
+            <div class="ijb-stat-value">{{ ticket_count }}</div>
+        </div>
+
+    </div>
+
+
+    <!-- MANAGEMENT MODULES -->
+    <h2 class="ijb-section-title">Management Modules</h2>
+
+    <p class="ijb-module-note">
+        Select a module to view and manage its records.
+        Use the Add link to create a new record.
+    </p>
+
+    {% for group in management_groups %}
+
+        <section class="ijb-module-group">
+
+            <div class="ijb-group-heading">
+                <h3>{{ group.title }}</h3>
+                <p>{{ group.description }}</p>
+            </div>
+
+            <div class="ijb-module-grid">
+
+                {% for model in group.models %}
+
+                    <article class="ijb-module-card">
+
+                        {% if model.admin_url %}
+                            <a class="ijb-module-main"
+                               href="{{ model.admin_url }}">
+                        {% elif model.add_url %}
+                            <a class="ijb-module-main"
+                               href="{{ model.add_url }}">
+                        {% else %}
+                            <div class="ijb-module-main">
+                        {% endif %}
+
+                                <span class="ijb-module-icon">
+                                    {{ model.icon }}
+                                </span>
+
+                                <span class="ijb-module-name">
+                                    {{ model.name }}
+                                </span>
+
+                                <span class="ijb-module-description">
+                                    View and manage records →
+                                </span>
+
+                        {% if model.admin_url or model.add_url %}
+                            </a>
+                        {% else %}
+                            </div>
+                        {% endif %}
+
+                        {% if model.add_url %}
+                            <div class="ijb-module-actions">
+                                <a class="ijb-add-link"
+                                   href="{{ model.add_url }}">
+                                    + Add new
+                                </a>
+                            </div>
+                        {% endif %}
+
+                    </article>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+    {% empty %}
+
+        <div class="ijb-no-modules">
+            No management modules are currently available.
+        </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

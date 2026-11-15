@@ -10,6 +10,8 @@
     <title>{% block title %}IJB Student Portal{% endblock %}</title>
 
     <link rel="stylesheet" href="{% static 'portal/style.css' %}">
+
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
@@ -29,8 +31,9 @@
             </span>
         </a>
 
-        <!-- MAIN NAVIGATION -->
+        <!-- WORKSPACE NAVIGATION -->
         <div class="sidebar-section">
+
             <span class="sidebar-label">WORKSPACE</span>
 
             <nav class="side-nav">
@@ -70,24 +73,39 @@
             </nav>
         </div>
 
-        <!-- ADMIN NAVIGATION -->
-        {% if user.is_staff or user.role == 'STAFF' or user.role == 'MANAGER' %}
+        <!-- ADMINISTRATION NAVIGATION -->
+        {% if user.role == 'STAFF' or user.role == 'MANAGER' %}
         <div class="sidebar-section">
 
             <span class="sidebar-label">ADMINISTRASI</span>
 
             <nav class="side-nav">
+
+                <a href="{% url 'password_reset_list' %}"
+                   class="nav-link {% if request.resolver_match.url_name == 'password_reset_list' or request.resolver_match.url_name == 'password_reset_user' %}active{% endif %}">
+                    <span class="nav-icon">🔑</span>
+                    Reset password pengguna
+                </a>
+
+                {% if user.role == 'MANAGER' %}
                 <a href="/admin/" class="nav-link">
                     <span class="nav-icon">⚙</span>
                     Admin portal
                 </a>
-            </nav>
+                {% endif %}
 
+            </nav>
         </div>
         {% endif %}
 
         <!-- ACCOUNT SECTION -->
         <div class="sidebar-bottom">
+
+            <a href="{% url 'password_change' %}"
+               class="nav-link {% if request.resolver_match.url_name == 'password_change' %}active{% endif %}">
+                <span class="nav-icon">🔒</span>
+                Ubah password
+            </a>
 
             <div class="account-mini">
 
@@ -171,17 +189,19 @@
 
 {% if user.is_authenticated %}
 
-        <!-- FOOTER -->
-        <footer class="workspace-footer">
-            © {% now "Y" %} IJB Student Portal
-            <span>·</span>
-            Sistem operasional LPK
-        </footer>
+    <!-- FOOTER -->
+    <footer class="workspace-footer">
+        © {% now "Y" %} IJB Student Portal
+        <span>·</span>
+        Sistem operasional LPK
+    </footer>
 
     </div>
 </div>
 
 {% endif %}
+
+{% block extra_js %}{% endblock %}
 
 </body>
 </html>

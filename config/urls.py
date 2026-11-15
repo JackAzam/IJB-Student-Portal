@@ -9,6 +9,17 @@ urlpatterns = [
     path('login/', views.PortalLoginView.as_view(), name='login'),
     path('logout/', views.PortalLogoutView.as_view(), name='logout'),
     path('profile/', views.profile, name='profile'),
+    path('account/password/', views.password_change, name='password_change'),
+    path(
+        'account/password/reset/<int:user_id>/',
+        views.password_reset_user,
+        name='password_reset_user',
+    ),
+    path(
+        'account/password/reset/',
+        views.password_reset_list,
+        name='password_reset_list',
+    ),
     path('events/', views.events, name='events'),
     path('events/new/', views.event_create, name='event_create'),
     path('tickets/', views.tickets, name='tickets'),

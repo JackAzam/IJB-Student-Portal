@@ -19,6 +19,7 @@ from .models import (
     StudentDocument,
     CalendarEvent,
     SupportTicket,
+    AuditLog,
 )
 
 from .services import select_offer
@@ -682,3 +683,351 @@ class UserGroupSynchronizationTests(TestCase):
         self.assertFalse(
             user.groups.filter(pk=manager_group.pk).exists()
         )
+
+class PasswordManagementTests(TestCase):
+
+    OLD_PASSWORD = 'Existing!Password-4821'
+    NEW_PASSWORD = 'Different!Secure-Password-7359'
+
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username='password_staff',
+            password=self.OLD_PASSWORD,
+            role='STAFF',
+        )
+
+        self.manager = User.objects.create_user(
+            username='password_manager',
+            password=self.OLD_PASSWORD,
+            role='MANAGER',
+        )
+
+        self.student = User.objects.create_user(
+            username='password_student',
+            password=self.OLD_PASSWORD,
+            role='STUDENT',
+        )
+
+        self.other_staff = User.objects.create_user(
+            username='password_other_staff',
+            password=self.OLD_PASSWORD,
+            role='STAFF',
+        )
+
+        self.other_manager = User.objects.create_user(
+            username='password_other_manager',
+            password=self.OLD_PASSWORD,
+            role='MANAGER',
+        )
+
+        self.inactive_student = User.objects.create_user(
+            username='password_inactive',
+            password=self.OLD_PASSWORD,
+            role='STUDENT',
+            is_active=False,
+        )
+
+    def login_as(self, user):
+        self.client.force_login(user)
+
+    def reset_url(self, user):
+        return reverse(
+            'password_reset_user',
+            args=[user.pk],
+        )
+
+    def reset_password(self, user, new_password=None):
+        password = new_password or self.NEW_PASSWORD
+
+        return self.client.post(
+            self.reset_url(user),
+            {
+                'new_password1': password,
+                'new_password2': password,
+            },
+        )
+
+    def test_staff_can_reset_any_student_password(self):
+        self.login_as(self.staff)
+
+        response = self.reset_password(self.student)
+
+        self.assertEqual(response.status_code, 302)
+
+        self.student.refresh_from_db()
+
+        self.assertTrue(
+            self.student.check_password(self.NEW_PASSWORD)
+        )
+        self.assertFalse(
+            self.student.check_password(self.OLD_PASSWORD)
+        )
+
+    def test_staff_cannot_reset_another_staff(self):
+        self.login_as(self.staff)
+
+        response = self.client.get(
+            self.reset_url(self.other_staff)
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_staff_cannot_reset_manager(self):
+        self.login_as(self.staff)
+
+        response = self.client.get(
+            self.reset_url(self.manager)
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_staff_cannot_reset_own_account_through_reset_view(self):
+        self.login_as(self.staff)
+
+        response = self.client.get(
+            self.reset_url(self.staff)
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_manager_can_reset_student_password(self):
+        self.login_as(self.manager)
+
+        response = self.reset_password(self.student)
+
+        self.assertEqual(response.status_code, 302)
+
+        self.student.refresh_from_db()
+
+        self.assertTrue(
+            self.student.check_password(self.NEW_PASSWORD)
+        )
+
+    def test_manager_can_reset_staff_password(self):
+        self.login_as(self.manager)
+
+        response = self.reset_password(self.other_staff)
+
+        self.assertEqual(response.status_code, 302)
+
+        self.other_staff.refresh_from_db()
+
+        self.assertTrue(
+            self.other_staff.check_password(self.NEW_PASSWORD)
+        )
+
+    def test_manager_cannot_reset_another_manager(self):
+        self.login_as(self.manager)
+
+        response = self.client.get(
+            self.reset_url(self.other_manager)
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_inactive_student_cannot_be_reset(self):
+        self.login_as(self.staff)
+
+        response = self.client.get(
+            self.reset_url(self.inactive_student)
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_successful_staff_reset_creates_audit_log(self):
+        self.login_as(self.staff)
+
+        response = self.reset_password(self.student)
+
+        self.assertEqual(response.status_code, 302)
+
+        log = AuditLog.objects.get(
+            actor=self.staff,
+            action='PASSWORD_RESET',
+            object_type='User',
+            object_id=str(self.student.pk),
+        )
+
+        self.assertEqual(
+            log.details,
+            {
+                'target_role': 'STUDENT',
+                'method': 'STAFF_ASSISTED',
+            },
+        )
+
+    def test_invalid_reset_password_does_not_change_password(self):
+        self.login_as(self.staff)
+
+        response = self.client.post(
+            self.reset_url(self.student),
+            {
+                'new_password1': '12345678',
+                'new_password2': '12345678',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.student.refresh_from_db()
+
+        self.assertTrue(
+            self.student.check_password(self.OLD_PASSWORD)
+        )
+
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action='PASSWORD_RESET',
+                object_id=str(self.student.pk),
+            ).exists()
+        )
+
+    def test_self_service_password_change(self):
+        self.login_as(self.student)
+
+        response = self.client.post(
+            reverse('password_change'),
+            {
+                'old_password': self.OLD_PASSWORD,
+                'new_password1': self.NEW_PASSWORD,
+                'new_password2': self.NEW_PASSWORD,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        self.student.refresh_from_db()
+
+        self.assertTrue(
+            self.student.check_password(self.NEW_PASSWORD)
+        )
+
+        self.assertTrue(
+            self.client.session.get('_auth_user_id')
+        )
+
+    def test_self_service_requires_correct_old_password(self):
+        self.login_as(self.student)
+
+        response = self.client.post(
+            reverse('password_change'),
+            {
+                'old_password': 'Wrong!Password-12345',
+                'new_password1': self.NEW_PASSWORD,
+                'new_password2': self.NEW_PASSWORD,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.student.refresh_from_db()
+
+        self.assertTrue(
+            self.student.check_password(self.OLD_PASSWORD)
+        )
+
+        self.assertFalse(
+            AuditLog.objects.filter(
+                actor=self.student,
+                action='PASSWORD_CHANGED',
+            ).exists()
+        )
+
+    def test_self_service_creates_audit_log(self):
+        self.login_as(self.student)
+
+        response = self.client.post(
+            reverse('password_change'),
+            {
+                'old_password': self.OLD_PASSWORD,
+                'new_password1': self.NEW_PASSWORD,
+                'new_password2': self.NEW_PASSWORD,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        log = AuditLog.objects.get(
+            actor=self.student,
+            action='PASSWORD_CHANGED',
+            object_type='User',
+            object_id=str(self.student.pk),
+        )
+
+        self.assertEqual(
+            log.details,
+            {'method': 'SELF_SERVICE'},
+        )
+
+    def test_staff_reset_list_only_shows_students(self):
+        self.login_as(self.staff)
+
+        response = self.client.get(
+            reverse('password_reset_list')
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        users = list(response.context['users'])
+
+        self.assertIn(self.student, users)
+        self.assertNotIn(self.other_staff, users)
+        self.assertNotIn(self.manager, users)
+        self.assertNotIn(self.inactive_student, users)
+
+    def test_manager_reset_list_shows_students_and_staff(self):
+        self.login_as(self.manager)
+
+        response = self.client.get(
+            reverse('password_reset_list')
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        users = list(response.context['users'])
+
+        self.assertIn(self.student, users)
+        self.assertIn(self.staff, users)
+        self.assertIn(self.other_staff, users)
+        self.assertNotIn(self.other_manager, users)
+        self.assertNotIn(self.inactive_student, users)
+
+    def test_reset_list_search_filters_users(self):
+        self.login_as(self.manager)
+
+        response = self.client.get(
+            reverse('password_reset_list'),
+            {'q': 'password_student'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        users = list(response.context['users'])
+
+        self.assertEqual(users, [self.student])
+
+    def test_student_cannot_access_reset_list(self):
+        self.login_as(self.student)
+
+        response = self.client.get(
+            reverse('password_reset_list')
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_unauthenticated_user_cannot_access_password_pages(self):
+        response_change = self.client.get(
+            reverse('password_change')
+        )
+
+        response_list = self.client.get(
+            reverse('password_reset_list')
+        )
+
+        response_reset = self.client.get(
+            self.reset_url(self.student)
+        )
+
+        self.assertEqual(response_change.status_code, 302)
+        self.assertEqual(response_list.status_code, 302)
+        self.assertEqual(response_reset.status_code, 302)

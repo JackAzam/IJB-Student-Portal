@@ -2,10 +2,13 @@ import mimetypes
 from pathlib import Path
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash, get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.db.models import Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -103,6 +106,141 @@ def profile(request):
     if request.method == 'POST' and form.is_valid():
         form.save(); messages.success(request, 'Profil berhasil diperbarui.'); return redirect('profile')
     return render(request, 'portal/profile.html', {'form': form})
+
+@login_required
+def password_reset_user(request, user_id):
+    actor_role = request.user.role
+
+    if actor_role == 'STAFF':
+        allowed_roles = ['STUDENT']
+    elif actor_role == 'MANAGER':
+        allowed_roles = ['STUDENT', 'STAFF']
+    else:
+        raise PermissionDenied
+
+    if request.user.pk == user_id:
+        raise PermissionDenied
+
+    target_user = get_object_or_404(
+        get_user_model().objects.filter(
+            role__in=allowed_roles,
+            is_active=True,
+        ),
+        pk=user_id,
+    )
+
+    target_role = target_user.role
+
+    if request.method == 'POST':
+        form = SetPasswordForm(target_user, request.POST)
+
+        if form.is_valid():
+            with transaction.atomic():
+                user = form.save()
+
+                AuditLog.objects.create(
+                    actor=request.user,
+                    action='PASSWORD_RESET',
+                    object_type='User',
+                    object_id=str(user.pk),
+                    details={
+                        'target_role': target_role,
+                        'method': 'STAFF_ASSISTED',
+                    },
+                )
+
+            messages.success(
+                request,
+                'Password pengguna berhasil direset.',
+            )
+            return redirect('dashboard')
+    else:
+        form = SetPasswordForm(target_user)
+
+    return render(
+        request,
+        'portal/password_reset_user.html',
+        {
+            'form': form,
+            'target_user': target_user,
+        },
+    )
+
+
+@login_required
+def password_change(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+
+        if form.is_valid():
+            with transaction.atomic():
+                user = form.save()
+
+                AuditLog.objects.create(
+                    actor=request.user,
+                    action='PASSWORD_CHANGED',
+                    object_type='User',
+                    object_id=str(user.pk),
+                    details={
+                        'method': 'SELF_SERVICE',
+                    },
+                )
+
+            update_session_auth_hash(request, user)
+
+            messages.success(
+                request,
+                'Password berhasil diubah.',
+            )
+
+            return redirect('password_change')
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(
+        request,
+        'portal/password_change.html',
+        {
+            'form': form,
+        },
+    )
+
+
+@login_required
+def password_reset_list(request):
+    if request.user.role not in {'STAFF', 'MANAGER'}:
+        raise PermissionDenied
+
+    if request.user.role == 'STAFF':
+        allowed_roles = ['STUDENT']
+    else:
+        allowed_roles = ['STUDENT', 'STAFF']
+
+    query = request.GET.get('q', '').strip()
+
+    users = get_user_model().objects.filter(
+        role__in=allowed_roles,
+        is_active=True,
+    )
+
+    if query:
+        users = users.filter(
+            Q(username__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(email__icontains=query)
+        )
+
+    users = users.order_by('username')[:50]
+
+    return render(
+        request,
+        'portal/password_reset_list.html',
+        {
+            'users': users,
+            'query': query,
+        },
+    )
 
 @login_required
 def events(request):
