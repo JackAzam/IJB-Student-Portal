@@ -1,12 +1,13 @@
 # IJB Student Portal --- Product Requirements Document (PRD)
 
-**Document status:** Development baseline\
+**Document status:** Active development\
 **Product:** IJB Student Portal\
 **Organization:** LPK (Indonesian training and placement organization)\
 **Primary users:** Students/candidates, LPK staff, management, system
 administrator\
-**Version:** 1.0\
-**Date:** 1 November 2026
+**Version:** 1.02 + implementation tracking revision\
+**Original baseline date:** 1 November 2026\
+**Last updated:** 12 November 2026
 
 ## 1. Product overview
 
@@ -730,3 +731,145 @@ staff workload monitoring.
 The workflow board is an operational view over existing student
 processes. It must not duplicate or replace the authoritative records
 for passports, exams, documents, schedules, or support tickets.
+
+## 15. Implementation Status and Development Roadmap
+
+This section tracks implementation progress and distinguishes implemented functionality from approved requirements and planned work.
+
+### 15.1 Development baseline
+
+- Current development version: v1.02
+- Current main development commit: `c33cbe5`
+- Requirements commit: `da892e9`
+- Previous implementation baseline: `04996ac`
+- Main branch: `main`
+
+### 15.2 Implemented functionality
+
+| Feature | Status |
+|---|---|
+| Student, Staff, and Manager roles | Implemented |
+| Staff registration code | Implemented |
+| Student-to-staff assignments | Implemented |
+| Multiple staff assignments per student | Implemented |
+| Staff access restricted by active assignments | Implemented |
+| Manager cross-team student access | Implemented |
+| Manager-only Django administration | Implemented |
+| Internal ticket replies | Implemented |
+| Role-based group synchronization | Implemented |
+
+Recorded v1.02 verification:
+
+- 24 portal tests passed.
+- Django system checks passed.
+- Migration consistency check passed.
+
+These results must be rerun after integration or relevant changes.
+
+### 15.3 Approved requirements awaiting implementation
+
+#### 15.3.1 Staff-assisted password reset
+
+- STAFF can reset passwords for any STUDENT.
+- MANAGER can reset passwords for any STUDENT.
+- Only MANAGER can reset STAFF passwords.
+- Existing passwords must never be viewable.
+- Password updates must use Django's secure password-setting mechanism.
+- Every reset must be recorded in AuditLog.
+- Temporary passwords and forced password changes are not required.
+
+**Status:** Approved; implementation pending.
+
+#### 15.3.2 Date and time formatting
+
+- Display dates using `dd-mm-yyyy`.
+- Display time using 24-hour `HH:mm`.
+- Combined date and time: `dd-mm-yyyy HH:mm`.
+- Apply consistent formatting throughout relevant portal pages.
+
+**Status:** Approved; implementation pending.
+
+#### 15.3.3 Interview timezone handling
+
+- Interview input uses JST (`Asia/Tokyo`).
+- Interview display uses WIB (`Asia/Jakarta`).
+- Convert timezone-aware timestamps correctly.
+- Preserve timezone-aware database storage.
+- Keep the portal's global default timezone as WIB.
+
+**Status:** Approved; implementation pending.
+
+### 15.4 Workflow Board delivery
+
+Requirements are defined in FR-125 through FR-134.
+
+Remaining implementation work:
+
+- Build the staff Workflow Board.
+- Group work by student and required tasks.
+- Support multiple staff working on the same workflow item in parallel.
+- Maintain workflow activity history.
+- Support follow-up dates and progress updates.
+- Provide student-visible progress and next actions.
+- Provide manager workload monitoring.
+- Preserve access restrictions and internal-note privacy.
+- Keep workflow stages separate from authoritative process statuses.
+
+Operational stages:
+
+- New / Incoming
+- Needs Attention
+- Waiting for Student
+- Processing
+- Waiting for External Party
+- Ready / Completed
+
+**Status:** Requirements documented; implementation pending.
+
+### 15.5 Document management improvements
+
+Planned work:
+
+- Review actual student document templates.
+- Identify document requirements for each program and process.
+- Improve document submission and verification.
+- Support approved, rejected, and resubmitted documents.
+- Review document visibility and download permissions.
+- Review Ginoujishuusei Forms 1–14 and Tokutei Forms 1, 5, and 6.
+
+**Status:** Pending template review and implementation planning.
+
+### 15.6 Future development
+
+- Google Drive integration.
+- Google Calendar synchronization.
+- Staff LINE reminders.
+- Improved operational dashboards.
+- Backup monitoring.
+- Advanced workflow automation.
+- Reporting and analytics.
+
+Prioritize these according to operational needs and available infrastructure.
+
+### 15.7 Development tracking rules
+
+1. Document requirements before implementation.
+2. Do not silently change approved requirements.
+3. Mark features implemented only after source-code verification.
+4. Test security-sensitive functionality.
+5. Review database migrations before application.
+6. Test changes before committing.
+7. Ensure Git commits accurately describe their changes.
+8. Never commit or push without explicit approval.
+9. Reconcile development across computers through Git before database or migration operations.
+10. Preserve project backups and local databases unless removal is explicitly approved.
+
+### 15.8 Revision history
+
+| Version | Description |
+|---|---|
+| 1.00 | Initial product requirements baseline, 1 November 2026 |
+| 1.02 | Student self-service and workflow requirements |
+| 1.02 tracking revision | Implementation progress and additional approved requirements |
+
+**Last tracking revision:** 12 November 2026
