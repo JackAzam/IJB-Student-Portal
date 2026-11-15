@@ -22,3 +22,7 @@ staticfiles/
 
 # IDE
 .idea/
+
+# Local backup files - never commit
+*.backup.*
+*.v1.01-backup
