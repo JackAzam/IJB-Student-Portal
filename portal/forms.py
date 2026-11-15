@@ -2,7 +2,15 @@ from django import forms
 from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, StudentProfile, CalendarEvent, SupportTicket, StaffRegistrationCode
+from .models import (
+    User,
+    StudentProfile,
+    CalendarEvent,
+    SupportTicket,
+    StaffRegistrationCode,
+    Interview
+)
+from zoneinfo import ZoneInfo
 
 class RegistrationForm(UserCreationForm):
     first_name = forms.CharField(max_length=150, label='Nama depan')
@@ -66,6 +74,43 @@ class EventForm(forms.ModelForm):
         model = CalendarEvent
         fields = ['title','kind','starts_at','ends_at','location','notes']
         widgets = {'starts_at': forms.DateTimeInput(attrs={'type':'datetime-local'}), 'ends_at': forms.DateTimeInput(attrs={'type':'datetime-local'}), 'notes': forms.Textarea(attrs={'rows':3})}
+
+class InterviewAdminForm(forms.ModelForm):
+    scheduled_at = forms.DateTimeField(
+        label='Waktu interview (JST)',
+        required=False,
+        input_formats=['%Y-%m-%dT%H:%M'],
+        widget=forms.DateTimeInput(
+            format='%Y-%m-%dT%H:%M',
+            attrs={'type': 'datetime-local'},
+        ),
+    )
+    class Meta:
+        model = Interview
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Show existing interview times in Japan time when editing.
+        if self.instance and self.instance.pk and self.instance.scheduled_at:
+            japan_time = self.instance.scheduled_at.astimezone(
+                ZoneInfo('Asia/Tokyo')
+            )
+            self.initial['scheduled_at'] = japan_time.replace(tzinfo=None)
+
+    def clean_scheduled_at(self):
+        value = self.cleaned_data.get('scheduled_at')
+
+        if value is None:
+            return value
+
+        # The form initially interprets a naive input using the portal timezone.
+        # Preserve its displayed clock time, then explicitly assign Japan timezone.
+        if timezone.is_aware(value):
+            value = timezone.make_naive(value, timezone.get_default_timezone())
+
+        return timezone.make_aware(value, ZoneInfo('Asia/Tokyo'))
 
 class TicketForm(forms.ModelForm):
     class Meta:

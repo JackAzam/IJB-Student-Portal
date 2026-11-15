@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from . import models
 from .services import select_offer
+from .forms import InterviewAdminForm
 
 @admin.register(models.User, site=ijb_admin_site)
 class UserAdmin(BaseUserAdmin):
@@ -113,9 +114,10 @@ class ExamAttemptAdmin(admin.ModelAdmin):
 
 @admin.register(models.Interview, site=ijb_admin_site)
 class InterviewAdmin(admin.ModelAdmin):
-    list_display = ('student','order','scheduled_at','status')
-    list_filter = ('status','order__pathway','order__job_type')
-    search_fields = ('student__user__username','order__code','order__company__name')
+    form = InterviewAdminForm
+    list_display = ('student', 'order', 'scheduled_at', 'status')
+    list_filter = ('status', 'order__pathway', 'order__job_type')
+    search_fields = ('student__user__username', 'order__code', 'order__company__name')
 
 @admin.register(models.Offer, site=ijb_admin_site)
 class OfferAdmin(admin.ModelAdmin):
