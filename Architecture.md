@@ -187,55 +187,64 @@ unreliable synced folder.
 -   `StaffProfile`: staff-specific information and team.
 -   `StudentProfile`: candidate identity, origin, contact and consent
     metadata.
--   `StudentProgram`: student, program type, lifecycle status, assigned
-    staff, dates.
--   `TSKKumiai`: organization record.
--   `ReceiverCompany`: Japanese receiving company.
+-   `StudentProgram`: student, program type, lifecycle status,
+    responsibility metadata, dates. Staff responsibility assignments
+    must not restrict operational access.
+-   `TskKumiai`: organization record.
+-   `ReceivingCompany`: Japanese receiving company.
 -   `CompanyContact`: email, PIC, phone, role.
 -   `JobType`: configurable job type/category.
 -   `Sector`: configurable business sector.
--   `Order`: Training Order or Job Order, reference, organization,
-    company, location, status.
--   `OrderRequirement`: exam, skill category, document, or other
-    requirement attached to an order.
--   `StudentOrderAssignment`: student's association with an order and
-    program.
--   `ExamRule`: exam type/provider/category, retake interval, effective
-    dates, active state.
+-   `Order`: Training Order or Job Order, reference, organization, company, location, status.
+-   `JITCOPreparation`: per-Training-Order preparation record,
+    responsible staff, preparation status, and handover history.
+-   `OrderDocument`: order-level document metadata, file versions,
+    uploader, checksum, and document category.
+-   `OrderRequirement`: exam, skill category, document, or other requirement attached to an order.
+-   `StudentOrderAssignment`: student's association with an order and program.
+-   `JITCOFormChecklist`: Training Order-level completion tracking for the applicable JITCO Forms 1–23.
+-   `ExamRule`: exam type/provider/category, retake interval, effective dates, active state.
 -   `ExamRequirement`: requirement attached to a program/order.
--   `ExamBooking`: reservation, date, venue, booking status, reported
-    issue.
+-   `ExamBooking`: reservation, date, venue, booking status, reported issue.
 -   `ExamAttempt`: attempt number, date, result, score/grade, evidence.
 -   `MedicalAppointment`: appointment date, facility, status.
 -   `MedicalResult`: uploaded evidence, review, validity.
--   `InterviewEvent`: scheduled event, order, company, mendan,
-    date/time, mode/location.
--   `InterviewInvitation`: student invited to event and selected
-    date/response.
+-   `InterviewEvent`: scheduled event, order, company, mendan, date/time, mode/location.
+-   `InterviewInvitation`: student invited to event and selected date/response.
 -   `InterviewOutcome`: outcome and notes for a student's interview.
 -   `Offer`: passed interview/placement offer details.
 -   `OfferSelection`: student's selected offer and selection timestamp.
--   `PassportCase`: program-specific passport workflow and current
-    status.
--   `RecommendationLetterRequest`: WIWITAN BARU SUKABUMI request,
-    supporting data, deadlines, received file.
+-   `PassportCase`: program-specific passport workflow and current status.
+-   `RecommendationLetterRequest`: WIWITAN BARU SUKABUMI request, supporting data, deadlines, received file.
 -   `DocumentTemplate`: catalogue/template and applicability rules.
 -   `StudentDocument`: per-student required document instance.
--   `DocumentVersion`: file metadata, version, uploader, checksum,
-    review state.
--   `SupportTicket`: student request, category, priority, assignment,
-    status.
+-   `DocumentVersion`: file metadata, version, uploader, checksum, review state.
+-   `WorkflowItem`: student-linked operational task, source record, due date, operational status, and progress metadata.
+-   `WorkflowActivity`: actor, timestamp, action, and safe activity details.
+-   `SupportTicket`: student request, category, priority, assignment, status.
 -   `TicketMessage`: conversation and attachments.
 -   `CalendarEvent`: portal-owned event and participants.
 -   `ExternalCalendarLink`: Google Calendar event ID and sync state.
 -   `PICVisit`: TSK/KUMIAI visit and follow-up actions.
--   `PlacementCommunication`: recipient group, sender, timestamp,
-    summary, confirmation.
--   `AuditEvent`: actor, timestamp, entity, action, before/after
-    snapshot or safe diff.
+-   `PlacementCommunication`: recipient group, sender, timestamp, summary, confirmation.
+-   `AuditEvent`: actor, timestamp, entity, action, before/after snapshot or safe diff.
 
 ### 5.2 Important relationship rules
 
+-   A Training Order has zero or one `JITCOPreparation` record.
+    Create the record when staff initiate JITCO preparation.
+-   Each `JITCOPreparation` belongs to exactly one Training Order.
+-   A `JITCOPreparation` references its Training Order and tracks
+    preparation responsibility separately from document uploaders.
+-   A `JITCOPreparation` may reference multiple `OrderDocument`
+    records and one order-level JITCO Forms 1–23 checklist.
+-   `OrderDocument` belongs to an order, not an individual student.
+-   Students listed for JITCO preparation are derived from the
+    Training Order's `StudentOrderAssignment` records.
+-   Student employment contracts and passports reuse the existing
+    `StudentDocument` and `DocumentVersion` records.
+-   JITCO Forms 1–23 completion is separate from student-specific
+    employment contract Forms 1–14.
 -   One student can have multiple `StudentProgram` records over time.
 -   One student can have multiple order assignments, interviews,
     outcomes, and offers.
@@ -316,8 +325,163 @@ student or staff uploads. - Whether signed/unsigned variants are
 required. - Review requirement. - Default due-date calculation, if
 known.
 
-Each student document instance tracks status, owner, due date, urgency,
-visibility, and versions.
+Each student document instance tracks status, responsibility metadata,
+due date, urgency, visibility, and versions.
+
+A required checklist item must exist even when no file has been uploaded.
+Prevent duplicate instances for the same student and applicable
+requirement. Document uploads create new versions and preserve previous
+versions and their review history.
+
+### 6.6 Workflow Board architecture
+
+The Workflow Board is a student-centered operational view. Group work
+by student, then display that student's applicable documents and tasks.
+Student cards must be prominent. Do not group the primary board by staff.
+
+The five operational workflow statuses are:
+
+- `PENDING`
+- `IN_PROGRESS`
+- `SUBMITTED`
+- `APPROVED`
+- `REJECTED`
+
+These statuses are separate from the existing `StudentDocument` review
+statuses. Preserve existing document status values and compatibility.
+
+Synchronization rules:
+
+- Upload moves the workflow item to `SUBMITTED`.
+- Starting work may move it to `IN_PROGRESS`.
+- Approval moves it to `APPROVED` and updates the authoritative
+  document through its existing review process.
+- Rejection moves it to `REJECTED` and preserves review notes.
+- Resubmission returns it to `SUBMITTED`, retaining previous versions.
+
+Expiry and overdue conditions are urgency indicators, not additional
+workflow statuses.
+
+Progress is calculated using approved applicable required items divided
+by all applicable required items. Optional items do not reduce the
+required completion percentage.
+
+Urgency rules:
+
+- Overdue: incomplete and past its due date.
+- Urgent: incomplete and due within three days.
+- Due soon: incomplete and due within seven days.
+- No due date: no date-based urgency.
+
+Multiple staff members may work on the same student's items in parallel.
+Do not require exclusive ownership locks.
+
+The board must reference authoritative process records rather than
+duplicate exam, passport, interview, ticket, or document data.
+
+Internal staff notes and private activity must not be visible to students.
+Record workflow actions with actor, timestamp, and relevant entity.
+
+### 6.7 JITCO Preparation architecture
+
+JITCO Preparation is a per-Training-Order preparation and handover
+workflow. It does not perform external JITCO or Kemnaker submission.
+
+Wiwitan performs the actual external upload. IJB records document
+collection, preparation readiness, and manual handover only.
+
+#### Order and company information
+
+- Display the Japanese company name as the main heading and the
+  Indonesian company name underneath.
+- Do not display the TO Registration Number in the heading.
+- Reuse `ReceivingCompany`, `TskKumiai`, `CompanyContact`, and
+  `Sector` as authoritative information sources.
+- Avoid duplicating company and Kumiai records.
+
+#### Order-level documents
+
+`OrderDocument` stores Training Order-level files, including:
+
+- Training Order PDF.
+- Kumiai PIC name card (image or PDF).
+
+Order-level files must not be stored as student documents.
+
+Order documents must support version history, actual uploader identity,
+upload timestamp, file validation, and audit history.
+
+The JITCO Forms 1–23 checklist belongs to the Training Order and must
+remain separate from student-specific document requirements.
+
+Track completion for each applicable form individually. Calculate
+overall checklist completion from the individual form states rather
+than relying on a single manually maintained Boolean value.
+
+#### Student information and documents
+
+List students automatically from `StudentOrderAssignment` for the
+selected Training Order.
+
+For each student, display participant email, employment contract
+status, and passport status.
+
+Reuse existing `StudentDocument` and `DocumentVersion` records for
+employment contracts and passports. Do not create duplicate student
+documents for JITCO preparation.
+
+Employment contract requirements must support applicable Forms 1–14.
+
+#### Preparation responsibility and collaboration
+
+Track the staff member responsible for coordinating preparation
+separately from the authenticated uploader of each document.
+
+Multiple staff members may contribute to the same preparation.
+Do not impose exclusive ownership or upload locks.
+
+Every upload must record its actual authenticated uploader and
+timestamp. Preserve versions and audit history.
+
+#### Preparation and handover status
+
+Use these preparation statuses:
+
+- `COLLECTING_DOCUMENTS`
+- `DOCUMENTS_INCOMPLETE`
+- `PREPARING_JITCO_DOCUMENTS`
+- `READY_FOR_WIWITAN`
+- `HANDED_OVER_TO_WIWITAN`
+- `COMPLETED_CONFIRMATION_RECEIVED`
+
+Record status changes with actor, timestamp, and relevant details.
+
+`COMPLETED_CONFIRMATION_RECEIVED` means confirmation was received
+after handover. It must not imply that IJB performed the external
+submission.
+
+#### Manual handover
+
+Provide a formatted information export suitable for copying into
+WhatsApp. It should include company details, Kumiai contacts,
+Training Order information, participant emails, and document status.
+
+Provide a downloadable package containing available order-level
+documents, employment contracts, and passports.
+
+The handover is manual. Do not represent it as an IJB-to-JITCO
+integration or direct external submission.
+
+#### Authorization and privacy
+
+STAFF may upload required documents on behalf of any student,
+regardless of StudentStaffAssignment.
+
+Students may upload only their own permitted documents.
+
+Preparation responsibility does not restrict other authorized staff
+from contributing. Internal staff activity and private notes must not
+be exposed to students.
 
 ## 7. Authentication and authorization
 
@@ -328,8 +492,25 @@ and avoid changing `AUTH_USER_MODEL` after production data exists.
 Recommended roles: - Student - Staff Basic - Staff Operations - Staff
 Document - Staff Supervisor - Management - Superuser
 
-Use Django Groups and permissions, plus object-level checks for
-student-owned records. Do not rely only on hiding menu links.
+Use Django Groups and permissions, plus server-side authorization checks.
+Do not rely only on hiding menu links.
+
+STAFF have operational access to all students' workflows and documents.
+StudentStaffAssignment may remain for responsibility tracking and
+workload history, but must not restrict operational access.
+
+Students remain restricted to their own records. STAFF may upload
+documents on behalf of any student, while students may upload only
+their own permitted documents.
+
+MANAGER administers blank document templates. STAFF may download
+active templates. Staff operational access does not grant permission
+to change user roles, elevate accounts, or administer manager-only
+configuration.
+
+Every upload must record the actual authenticated uploader, target
+student, requirement, timestamp, and version. Never trust a
+browser-supplied uploader identity.
 
 Registration: - Student signup creates an active student account
 immediately. - Staff signup creates an active baseline staff account
@@ -367,6 +548,33 @@ Retention/deletion policy metadata.
 Never assume that a Google Drive folder is private simply because its
 URL is difficult to guess. Configure explicit permissions and test
 access using a non-staff account.
+
+### Document Template Library
+
+Store approved blank templates separately from completed student
+submissions.
+
+Template metadata should include:
+
+- Template name and official form reference.
+- Related document requirement and applicable pathway.
+- Language and version.
+- Active/inactive state and instructions.
+- Uploader, upload timestamp, and stored file reference.
+
+One document requirement may have multiple templates or language
+versions. MANAGER controls template creation, updates, activation,
+and retirement. STAFF may download active templates.
+
+The initial workflow is to download a blank template, complete it
+outside the portal, and upload the completed document to the student's
+requirement. Online form filling is a future capability.
+
+Updating a blank template must never overwrite a student's submitted
+document or historical versions.
+
+Validate approved file types and file sizes. Apply the same private
+storage and authorized download controls used for student documents.
 
 ## 9. Google Calendar integration
 

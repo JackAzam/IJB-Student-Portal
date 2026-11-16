@@ -21,7 +21,10 @@ from .models import (
     SupportTicket,
     AuditLog,
 )
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
+from .forms import InterviewAdminForm
 from .services import select_offer
 
 
@@ -210,6 +213,116 @@ class PortalAccessTests(TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
+class InterviewAdminFormTests(TestCase):
+
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username='interview_staff',
+            password='Strong-test-pass-123',
+            role='STAFF',
+        )
+
+        self.student = User.objects.create_user(
+            username='interview_student',
+            password='Strong-test-pass-123',
+            role='STUDENT',
+        )
+
+        self.profile = StudentProfile.objects.create(
+            user=self.student
+        )
+
+        organization = TskKumiai.objects.create(
+            name='Interview Test Kumiai'
+        )
+
+        company = ReceivingCompany.objects.create(
+            organization=organization,
+            name='Interview Test Company',
+        )
+
+        job = JobType.objects.create(
+            name='Interview Test Job'
+        )
+
+        self.order = Order.objects.create(
+            code='INTERVIEW-001',
+            title='Interview Test Role',
+            kind='TO',
+            pathway='INTERNSHIP',
+            organization=organization,
+            company=company,
+            job_type=job,
+        )
+
+    def get_form_data(self, scheduled_at='2026-11-20T10:30'):
+        return {
+            'student': self.profile.pk,
+            'order': self.order.pk,
+            'created_by': self.staff.pk,
+            'scheduled_at': scheduled_at,
+            'status': 'SCHEDULED',
+            'notes': '',
+        }
+
+    def test_jst_input_is_saved_as_tokyo_time(self):
+        form = InterviewAdminForm(
+            data=self.get_form_data()
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+
+        expected = datetime(
+            2026, 11, 20, 10, 30,
+            tzinfo=ZoneInfo('Asia/Tokyo'),
+        )
+
+        self.assertEqual(
+            form.cleaned_data['scheduled_at'],
+            expected,
+        )
+
+        interview = form.save()
+
+        interview.refresh_from_db()
+
+        self.assertEqual(
+            interview.scheduled_at.astimezone(
+                ZoneInfo('Asia/Tokyo')
+            ),
+            expected,
+        )
+
+    def test_existing_interview_displays_jst_when_editing(self):
+        scheduled_at = datetime(
+            2026, 11, 20, 10, 30,
+            tzinfo=ZoneInfo('Asia/Tokyo'),
+        )
+
+        interview = Interview.objects.create(
+            student=self.profile,
+            order=self.order,
+            created_by=self.staff,
+            scheduled_at=scheduled_at,
+            status='SCHEDULED',
+        )
+
+        form = InterviewAdminForm(instance=interview)
+
+        self.assertEqual(
+            form.initial['scheduled_at'],
+            datetime(2026, 11, 20, 10, 30),
+        )
+
+    def test_empty_interview_schedule_is_valid(self):
+        form = InterviewAdminForm(
+            data=self.get_form_data(scheduled_at='')
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertIsNone(
+            form.cleaned_data['scheduled_at']
+        )
 
 class OfferSelectionTests(TestCase):
 

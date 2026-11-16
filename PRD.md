@@ -91,30 +91,36 @@ results, interviews, or documents.
 
 ### 4.2 Staff
 
-Staff can register and log in immediately. Their account receives a
-baseline staff role, while sensitive or administrative permissions
-remain restricted.
+All STAFF accounts receive operational access to student workflows and
+documents across the student population. Access is not restricted by
+StudentStaffAssignment.
 
-A baseline staff role does not grant access to all student records.
-Access to individual student records and workflow items must be based
-on explicit assignments or other permissions granted by management.
+Staff can:
 
-Staff can, according to assigned permissions:
+- View and maintain student operational profiles and workflow records.
+- View student document checklists and applicable requirements.
+- Upload documents on behalf of any student.
+- Download permitted student documents and active blank templates.
+- Update workflow progress and operational statuses.
+- Review, approve, or reject submitted documents.
+- Record follow-up dates and operational notes.
+- Work in parallel with other staff on the same student's records.
 
-- Review and maintain candidate records.
-- Create and manage TO/JO records and job opportunities.
-- Assign program pathways and applicable requirements.
-- Record exam bookings, results, attempts, and retake dates.
-- Manage medical appointments and results.
-- Create interview schedules and invitations.
-- Record interview outcomes and offers.
-- Track passport processing and recommendation-letter requests.
-- Manage student document checklists, uploads, reviews, and print retrieval.
-- Manage student support tickets.
-- Record TSK/KUMIAI PIC visits.
-- View operational dashboards and timelines.
-- Record that placement information has been communicated to the relevant TSK/KUMIAI and receiver company.
+Staff access does not grant permission to manage staff accounts,
+elevate roles, change system security settings, or administer manager-only
+configuration.
 
+StudentStaffAssignment may be retained for responsibility tracking,
+workload reporting, and historical records. It is not an access-control
+restriction.
+
+The system must record the authenticated staff member responsible for
+each upload, review, approval, rejection, and other audited action.
+Staff identity is available in internal activity and audit history but
+need not be prominent on the ordinary student workflow board.
+
+Internal staff notes and private operational activity must not be
+exposed to students.
 ### 4.3 Management
 
 Management permissions may include: - Cross-team dashboards and
@@ -637,100 +643,377 @@ monitoring.
 **Phase 4 --- Refinement:** Advanced analytics, configurable workflow
 automation, richer notifications, and operational improvements.
 
-## 14. v1.02 — Student self-service and workflow improvements
+## 14. Student Workflow Board and Document Management Requirements
 
-### 14.1 Staff access clarification
+This section records the approved workflow and document-management
+direction. Requirements in this section are approved design decisions;
+they are not considered implemented until verified in the application.
 
-Staff registration allows a staff member to log in under the baseline
-staff role. It does not automatically grant access to every student's
-records. Access to student records and workflow items must follow
-explicit staff assignments or other permissions granted by management.
+### 14.1 Staff access policy
 
-Managers retain cross-team oversight according to their permissions.
-Superusers retain system and permission administration responsibilities.
+All STAFF members have operational access to every student's workflow
+and document records.
 
-### 14.2 Student Workflow Board
+- Staff access is not limited by active StudentStaffAssignment records.
+- Staff can upload documents on behalf of any student.
+- Staff can review, approve, reject, and update document workflow items.
+- Multiple staff members can work on the same student simultaneously.
+- StudentStaffAssignment may remain for responsibility tracking and
+  workload history, but must not block operational access.
+- MANAGER and superuser retain broader administrative privileges.
+- Students can access only their own permitted records and upload only
+  their own documents.
 
-- **FR-125 (P0):** Provide a staff workflow board that groups student
-  work items by operational stage.
-- **FR-126 (P0):** Work items may represent existing student processes,
-  including passport cases, exam preparation, document requirements,
-  and support tickets.
-- **FR-127 (P0):** Each work item must identify the student, work
-  category, responsible staff member, due date (if applicable), current
-  stage, and latest activity.
-- **FR-128 (P0):** Authorized staff can assign work, update workflow
-  stages, set follow-up dates, and record progress.
-- **FR-129 (P0):** Managers can view cross-team work, monitor staff
-  workload, and identify overdue or blocked items.
-- **FR-130 (P0):** Staff can access only students and work items covered
-  by their assigned permissions.
-- **FR-131 (P0):** Students can view their own relevant progress and next
-  actions, but cannot access internal staff notes or administrative
-  information.
-- **FR-132 (P0):** Workflow activities, including assignments and stage
-  changes, must be recorded with the responsible user and timestamp.
-- **FR-133 (P0):** The workflow board must reference existing process
-  records rather than creating duplicate authoritative records or
-  statuses.
-- **FR-134 (P0):** Work items should be generated from existing records
-  when possible. Authorized staff may create separate follow-up tasks
-  when work cannot be represented by an existing process.
+This policy supersedes the earlier assignment-restricted staff access
+requirements in this document.
 
-### 14.3 Workflow board stages
+### 14.2 Student-centered Workflow Board
 
-The workflow board uses operational stages that are separate from the
-status of the underlying process:
+- **FR-125 (P0):** Provide a staff Workflow Board organized by student.
+  Each student is displayed as a student card with their applicable
+  required documents and operational tasks.
+- **FR-126 (P0):** Display required document and task completion under
+  each student rather than grouping the board primarily by staff member.
+- **FR-127 (P0):** Display relevant progress, outstanding requirements,
+  due dates, urgency indicators, and latest activity.
+- **FR-128 (P0):** Allow STAFF to update workflow statuses and work on
+  any student's operational items.
+- **FR-129 (P0):** Allow multiple staff members to work on the same
+  student and document requirements in parallel without exclusive
+  ownership locks.
+- **FR-130 (P0):** Keep staff names out of the ordinary board's primary
+  presentation. Preserve actor identity in internal activity and audit
+  history.
+- **FR-131 (P0):** Students can see their own permitted progress,
+  document requirements, and next actions, but cannot see internal
+  staff notes or private operational activity.
+- **FR-132 (P0):** Record workflow changes and document actions with
+  the authenticated actor and timestamp.
+- **FR-133 (P0):** Reference existing authoritative student, document,
+  exam, passport, and other process records instead of duplicating
+  their business data.
+- **FR-134 (P0):** Generate checklist items from applicable requirements
+  and existing process records. Avoid duplicate checklist entries for
+  the same applicable requirement.
 
-- New / Incoming
-- Needs Attention
-- Waiting for Student
-- Processing
-- Waiting for External Party
-- Ready / Completed
+### 14.3 Workflow statuses and progress
 
-A workflow stage describes where work stands operationally. It must
-not replace the authoritative status of a passport case, exam attempt,
-document, or support ticket.
+The document/task workflow uses these five operational statuses:
 
-For example, a passport case may have the status `PROCESSING` while
-its workflow item is in `Waiting for External Party`.
+- `PENDING` — work has not started.
+- `IN_PROGRESS` — a staff member is working on the item.
+- `SUBMITTED` — a document or required result has been submitted.
+- `APPROVED` — the submitted item has been accepted.
+- `REJECTED` — the submitted item requires correction or resubmission.
 
-Stage changes must preserve activity history. The board must not
-silently change the underlying process status when only the operational
-stage is updated.
+These workflow statuses are separate from existing
+StudentDocument.status values. Existing document review statuses must
+remain authoritative for document-specific review and storage logic.
 
-### 14.4 v1.02 acceptance criteria
+Synchronization rules:
 
-The v1.02 workflow improvements are acceptable when:
+- A successful upload moves the corresponding workflow item to
+  `SUBMITTED`.
+- Starting work may move an item to `IN_PROGRESS` without changing the
+  underlying document review status.
+- Approval moves the workflow item to `APPROVED` and the corresponding
+  document to its existing accepted state.
+- Rejection moves the workflow item to `REJECTED` and preserves the
+  existing rejected-document state and review notes.
+- Resubmission moves the workflow item back to `SUBMITTED`, retaining
+  the previous document versions and review history.
+- Expiry and overdue conditions are urgency indicators, not additional
+  workflow statuses.
 
-1. Staff can view workflow items only for students they are assigned
-   or explicitly authorized to manage.
-2. Managers can view cross-team workflow items and staff workloads.
-3. Students can view their own relevant progress but cannot view
-   another student's workflow items or internal staff notes.
-4. Authorized staff can assign work, change workflow stages, and
-   record follow-up dates.
-5. Workflow stage changes and assignments are recorded in activity
-   history with the responsible user and timestamp.
-6. Workflow items remain linked to their authoritative process records,
-   and changing a board stage does not create conflicting process
-   statuses.
-7. Existing student, exam, passport, document, and ticket permissions
-   remain enforced when accessing the workflow board.
-8. Existing v1.01 tests continue to pass as regression tests.
+Progress is calculated from applicable required items:
 
-### 14.5 Delivery scope
+`Approved required items / Total applicable required items`
 
-**v1.02 — Student self-service and workflow improvements:**
+Optional requirements do not reduce the required completion
+percentage. Missing required documents must appear in the checklist
+before an upload exists. The implementation must prevent duplicate
+instances for the same student and applicable requirement.
 
-Student workflow board, explicit staff-to-student assignments,
-workflow activity history, student next-action visibility, and improved
-staff workload monitoring.
+Urgency rules:
 
-The workflow board is an operational view over existing student
-processes. It must not duplicate or replace the authoritative records
-for passports, exams, documents, schedules, or support tickets.
+- Overdue: incomplete item whose due date has passed.
+- Urgent: incomplete item due within three days.
+- Due soon: incomplete item due within seven days.
+- No due date: no date-based urgency indicator.
+
+The board should make urgent and overdue work easy to identify without
+replacing the underlying process status.
+
+### 14.4 Document Template Library
+
+- **FR-135 (P0):** Provide a centralized library of approved blank
+  document templates.
+- **FR-136 (P0):** Link templates to their applicable
+  DocumentRequirement and program pathway.
+- **FR-137 (P0):** Allow MANAGER to upload, update, activate, deactivate,
+  and maintain templates.
+- **FR-138 (P0):** Allow STAFF to download active templates for
+  operational use.
+- **FR-139 (P0):** Support multiple template versions and language
+  variants where required.
+- **FR-140 (P0):** Keep blank templates separate from completed
+  student-submitted documents and their version history.
+- **FR-141 (P0):** Record template metadata, including name, form
+  reference, pathway, language, version, active state, and instructions.
+- **FR-142 (P0):** Validate uploaded template file types and size.
+
+Initial template metadata should support:
+
+- Template name and official form reference.
+- Applicable pathway: General, Internship, or Tokutei Ginou.
+- Related document requirement.
+- Language.
+- Version and effective/active state.
+- Staff instructions.
+- Uploaded file and uploader metadata.
+
+Initial scope supports downloading a blank template, completing it
+outside the portal, and uploading the completed file to the student's
+document requirement. Online form filling is a possible future
+enhancement and is not required for the initial implementation.
+
+Updating a blank template must never overwrite a student's completed
+document or historical submission.
+
+### 14.5 Program-specific document requirements
+
+The checklist must support the applicable forms and requirements for
+each student's underlying program:
+
+- Ginoujishuusei / Internship: applicable Forms 1–14 and other
+  confirmed program requirements.
+- Tokutei Ginou: applicable Forms 1, 5, and 6 and other confirmed
+  requirements.
+- Matching Job: derive requirements from its linked Internship or
+  Tokutei Ginou program/order rather than treating Matching Job as an
+  unrelated document pathway.
+
+The system must allow staff to confirm applicability and distinguish
+required from optional documents. Avoid duplicate checklist entries
+when multiple orders refer to the same applicable student requirement.
+
+### 14.6 Document upload and audit requirements
+
+- Students may upload only their own permitted documents.
+- STAFF may upload documents on behalf of any student.
+- The actual authenticated uploader must be recorded automatically.
+- The uploader must never be selected or overridden through a
+  user-controlled form field.
+- Record the student, requirement, uploader, upload timestamp, version,
+  and review history.
+- Every upload, review, approval, rejection, and relevant status change
+  must create an audit record.
+- Uploading a document must not automatically approve it.
+- Previous versions must remain available according to the retention
+  policy.
+- Private files must only be available through authorized access checks.
+
+### 14.7 Scope boundaries
+
+The initial Workflow Board is focused on student document requirements
+and operational tasks. Existing exam, medical, passport, interview,
+calendar, and ticket modules remain the authoritative sources for their
+own records and statuses.
+
+The board may later integrate these modules as linked tasks. It must
+not duplicate or silently modify their authoritative business data.
+
+### 14.8 Acceptance criteria
+
+The approved design is acceptable when:
+
+1. STAFF can access operational workflows and documents for all students.
+2. STAFF can upload documents on behalf of any student.
+3. Students cannot access another student's records or upload on behalf
+   of another student.
+4. Multiple staff can work on the same student's workflow without
+   assignment locks.
+5. The board groups work by student and displays applicable
+   requirements beneath each student.
+6. Required and optional documents are distinguished correctly.
+7. Workflow statuses remain separate from existing document statuses.
+8. Approval, rejection, and resubmission preserve document history.
+9. Uploads and reviews record the actual authenticated actor.
+10. Students cannot view internal staff notes or private activity.
+11. Managers can administer blank document templates.
+12. Staff can download active blank templates.
+13. Updating templates does not overwrite student submissions.
+14. Existing process records remain authoritative.
+15. Existing tests continue to pass, with new permission and workflow
+    tests added for the approved behavior.
+
+### 14.9 Delivery scope
+
+The next Workflow Board delivery includes the student-centered board,
+document/task checklist, five operational statuses, parallel staff
+operations, urgency indicators, audit history, and student-visible
+progress.
+
+The Document Template Library includes manager template administration,
+staff downloads, template versioning, and completed-document upload.
+
+**Status:** Requirements approved; implementation pending.
+
+### 14.10 JITCO Preparation Checklist
+
+#### 14.10.1 Purpose and scope
+
+Provide a JITCO Preparation page for each Training Order. The page
+organizes the information and documents required for JITCO preparation,
+tracks readiness, and supports manual handover to the staff member
+responsible for the external submission.
+
+IJB is responsible for document collection, preparation tracking, and
+handover only. IJB does not directly submit documents to JITCO or
+Kemnaker. Wiwitan performs the actual external upload.
+
+This feature must remain separate from the existing passport
+recommendation-letter workflow.
+
+#### 14.10.2 Training Order and company information
+
+Display the associated Japanese company name as the main page heading,
+with the Indonesian company name underneath.
+
+Do not display the TO Registration Number in the page heading.
+
+The page must show:
+- Japanese company name
+- Indonesian company name
+- Company email
+- Business sector
+- Kumiai name
+- Kumiai PIC name
+- Kumiai PIC phone number
+
+Use the existing company, Kumiai, contact, and sector records as the
+authoritative sources. Do not create unnecessary duplicate company
+records for this feature.
+
+#### 14.10.3 General JITCO documents
+
+Provide order-level document records for:
+- Training Order (TO) PDF
+- Kumiai PIC name card (image or PDF)
+
+Provide a JITCO Forms 1–23 completion checklist for the Training Order.
+
+Track the completion state of each applicable form individually.
+Calculate overall checklist completion from the individual form states.
+Do not rely on a single manually maintained Boolean value to represent
+the completion of all forms.
+
+These are Training Order documents and must not be stored as documents
+belonging to an individual student.
+
+#### 14.10.4 Student information and documents
+
+Automatically list all students assigned to the selected Training Order.
+
+The list must expand or update when student assignments change.
+
+For each student, provide:
+- Participant email address
+- Employment contract completion and document status
+- Passport document status
+
+Employment contract documentation must support the applicable Forms
+1–14 requirements.
+
+Reuse existing student document requirements, submissions, review
+statuses, and document version history wherever applicable. Do not
+create duplicate student document records solely for JITCO preparation.
+
+#### 14.10.5 Upload and staff responsibilities
+
+Any STAFF member may upload the required documents on behalf of any
+student, regardless of StudentStaffAssignment.
+
+Multiple staff members may contribute to the same Training Order
+preparation. Do not impose exclusive ownership or upload locks.
+
+Record the actual authenticated uploader and upload timestamp for
+every upload. Preserve document versions and audit history.
+
+The staff member responsible for preparing or coordinating the JITCO
+package must be tracked separately from the person who uploaded an
+individual document. These responsibilities may belong to different
+staff members.
+
+Uploading a document must not automatically mark it as approved or
+complete. Existing document review rules remain authoritative.
+
+#### 14.10.6 Preparation and handover status
+
+Provide the following Training Order preparation statuses:
+
+- Collecting Documents
+- Documents Incomplete
+- Preparing JITCO Documents
+- Ready for Wiwitan
+- Handed Over to Wiwitan
+- Completed (confirmation received)
+
+Track preparation and handover activity with the responsible actor
+and timestamp.
+
+The status must describe IJB's preparation and handover progress.
+Do not use a status such as "Submitted to JITCO" to represent an action
+that IJB staff do not perform.
+
+"Completed" means confirmation has been received after the handover;
+it must not imply that IJB performed the external upload.
+
+#### 14.10.7 Information copying and document handover
+
+Provide a **Copy All Information** action that generates readable,
+formatted text suitable for copying into WhatsApp.
+
+The copied information must include the relevant company details,
+Kumiai contact details, Training Order information, and participant
+emails and document completion status.
+
+Do not generate raw JSON as the normal user-facing copy format.
+
+Provide a **Download Documents** action that collects the available
+Training Order PDF, Kumiai PIC name card, student employment contracts,
+and student passports for manual handover.
+
+The handover process must remain manual and must not claim that IJB
+has submitted files to JITCO or Kemnaker.
+
+#### 14.10.8 Acceptance criteria
+
+1. Each Training Order has its own JITCO Preparation checklist.
+2. Company and Kumiai information comes from existing authoritative
+   records.
+3. The page heading displays Japanese and Indonesian company names,
+   without the TO Registration Number.
+4. Training Order documents are stored at the order level.
+5. Assigned students are listed automatically.
+6. Student-specific employment contracts and passports reuse the
+   existing document management workflow.
+7. Any STAFF member can upload documents for any student.
+8. Uploads record the actual uploader, timestamp, and version history.
+9. Preparation responsibility is tracked separately from upload
+   ownership.
+10. Multiple staff members can contribute without exclusive locks.
+11. Preparation and handover statuses do not misrepresent external
+    JITCO submission.
+12. Information can be copied in a readable format for WhatsApp.
+13. Available documents can be collected for manual handover.
+14. Existing document permissions, review rules, and audit history
+    remain intact.
+15. Each applicable JITCO Form 1–23 has an individual completion
+    state, and overall checklist completion is calculated from
+    those individual states.
+
+**Status:** Requirements approved; implementation pending.
 
 ## 15. Implementation Status and Development Roadmap
 
@@ -752,11 +1035,15 @@ This section tracks implementation progress and distinguishes implemented functi
 | Staff registration code | Implemented |
 | Student-to-staff assignments | Implemented |
 | Multiple staff assignments per student | Implemented |
-| Staff access restricted by active assignments | Implemented |
+| Assignment-restricted staff access | Implemented historically; superseded by approved all-student operational access policy |
 | Manager cross-team student access | Implemented |
 | Manager-only Django administration | Implemented |
 | Internal ticket replies | Implemented |
 | Role-based group synchronization | Implemented |
+
+The staff access policy change, Workflow Board, and template library
+must not be marked implemented until code and tests verify the new
+behavior.
 
 Recorded v1.02 verification:
 
@@ -765,7 +1052,6 @@ Recorded v1.02 verification:
 - Migration consistency check passed.
 
 These results must be rerun after integration or relevant changes.
-
 ### 15.3 Approved requirements awaiting implementation
 
 #### 15.3.1 Staff-assisted password reset
@@ -801,44 +1087,45 @@ These results must be rerun after integration or relevant changes.
 
 ### 15.4 Workflow Board delivery
 
-Requirements are defined in FR-125 through FR-134.
+Requirements are defined in Section 14.
 
 Remaining implementation work:
 
-- Build the staff Workflow Board.
-- Group work by student and required tasks.
-- Support multiple staff working on the same workflow item in parallel.
-- Maintain workflow activity history.
-- Support follow-up dates and progress updates.
-- Provide student-visible progress and next actions.
-- Provide manager workload monitoring.
-- Preserve access restrictions and internal-note privacy.
-- Keep workflow stages separate from authoritative process statuses.
+- Replace assignment-restricted staff operational access with access
+  for all STAFF across all student workflows and documents.
+- Keep student access restricted to the student's own records.
+- Build the student-centered Workflow Board.
+- Display each student's required documents and tasks.
+- Support the five operational statuses.
+- Support parallel staff work without exclusive ownership locks.
+- Calculate required-document progress.
+- Display due dates and urgency indicators.
+- Preserve internal activity and audit history.
+- Keep internal staff notes hidden from students.
+- Link to authoritative process records rather than duplicating them.
 
-Operational stages:
-
-- New / Incoming
-- Needs Attention
-- Waiting for Student
-- Processing
-- Waiting for External Party
-- Ready / Completed
-
-**Status:** Requirements documented; implementation pending.
-
+**Status:** Requirements approved; implementation pending.
 ### 15.5 Document management improvements
 
-Planned work:
+Approved work:
 
-- Review actual student document templates.
-- Identify document requirements for each program and process.
-- Improve document submission and verification.
-- Support approved, rejected, and resubmitted documents.
-- Review document visibility and download permissions.
-- Review Ginoujishuusei Forms 1–14 and Tokutei Forms 1, 5, and 6.
+- Create a Document Template Library.
+- Link templates to document requirements and program pathways.
+- Allow MANAGER to administer blank templates.
+- Allow STAFF to download active templates.
+- Support template language variants and version history.
+- Support completed-document upload by students and staff.
+- Allow STAFF to upload on behalf of any student.
+- Record actual uploader identity and audit all relevant actions.
+- Preserve completed document versions when templates are updated.
+- Confirm applicable Ginoujishuusei Forms 1-14 and Tokutei Forms 1, 5,
+  and 6 requirements.
+- Support required/optional checklist entries and prevent duplicates.
+- Preserve existing document review and download authorization.
 
-**Status:** Pending template review and implementation planning.
+Online form filling is deferred to a future phase.
 
+**Status:** Requirements approved; implementation pending.
 ### 15.6 Future development
 
 - Google Drive integration.
