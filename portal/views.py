@@ -31,14 +31,11 @@ def get_student_profile(user):
 
 
 def get_accessible_students(user):
-    if user.is_superuser or user.role == 'MANAGER':
-        return StudentProfile.objects.all()
+    if not user.is_authenticated:
+        return StudentProfile.objects.none()
 
-    if user.role == 'STAFF':
-        return StudentProfile.objects.filter(
-            staff_assignments__staff=user,
-            staff_assignments__active=True,
-        ).distinct()
+    if user.is_superuser or user.role in {'MANAGER', 'STAFF'}:
+        return StudentProfile.objects.all()
 
     return StudentProfile.objects.none()
 

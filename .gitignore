@@ -26,3 +26,5 @@ staticfiles/
 # Local backup files - never commit
 *.backup.*
 *.v1.01-backup
+# Private uploaded documents - never commit
+private_uploads/

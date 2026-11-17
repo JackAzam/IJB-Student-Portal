@@ -514,14 +514,15 @@ class StaffAssignmentAccessTests(TestCase):
             password='Strong-test-pass-123',
         )
 
-    def test_staff_dashboard_counts_only_assigned_students(self):
+    def test_staff_dashboard_counts_all_students(self):
         self.login_staff()
         response = self.client.get(reverse('dashboard'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['student_count'], 1)
+        self.assertEqual(response.context['student_count'], 2)
 
-    def test_staff_sees_only_assigned_student_events(self):
+
+    def test_staff_sees_all_student_events(self):
         self.login_staff()
         response = self.client.get(reverse('events'))
 
@@ -530,9 +531,10 @@ class StaffAssignmentAccessTests(TestCase):
             response.context['items'].values_list('id', flat=True)
         )
         self.assertIn(self.assigned_event.id, visible_ids)
-        self.assertNotIn(self.other_event.id, visible_ids)
+        self.assertIn(self.other_event.id, visible_ids)
 
-    def test_staff_sees_only_assigned_student_tickets(self):
+
+    def test_staff_sees_all_student_tickets(self):
         self.login_staff()
         response = self.client.get(reverse('tickets'))
 
@@ -541,9 +543,10 @@ class StaffAssignmentAccessTests(TestCase):
             response.context['items'].values_list('id', flat=True)
         )
         self.assertIn(self.assigned_ticket.id, visible_ids)
-        self.assertNotIn(self.other_ticket.id, visible_ids)
+        self.assertIn(self.other_ticket.id, visible_ids)
 
-    def test_staff_sees_only_assigned_student_documents(self):
+
+    def test_staff_sees_all_student_documents(self):
         self.login_staff()
         response = self.client.get(reverse('documents'))
 
@@ -552,9 +555,10 @@ class StaffAssignmentAccessTests(TestCase):
             response.context['items'].values_list('id', flat=True)
         )
         self.assertIn(self.assigned_document.id, visible_ids)
-        self.assertNotIn(self.other_document.id, visible_ids)
+        self.assertIn(self.other_document.id, visible_ids)
 
-    def test_inactive_assignment_revokes_staff_access(self):
+
+    def test_inactive_assignment_does_not_revoke_staff_access(self):
         self.assignment.active = False
         self.assignment.save(update_fields=['active'])
 
@@ -562,8 +566,19 @@ class StaffAssignmentAccessTests(TestCase):
         response = self.client.get(reverse('dashboard'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['student_count'], 0)
-    def test_staff_cannot_download_unassigned_student_document(self):
+        self.assertEqual(response.context['student_count'], 2)
+
+
+    def test_staff_can_access_unassigned_student_document_download(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.other_document.file = SimpleUploadedFile(
+            'test-document.pdf',
+            b'%PDF-1.4 test document',
+            content_type='application/pdf',
+        )
+        self.other_document.save()
+
         self.login_staff()
 
         response = self.client.get(
@@ -573,7 +588,7 @@ class StaffAssignmentAccessTests(TestCase):
             )
         )
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
 
     def test_manager_can_see_all_students_and_their_records(self):
         self.client.login(
@@ -884,6 +899,26 @@ class PasswordManagementTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    def test_staff_cannot_post_reset_for_another_staff(self):
+        self.login_as(self.staff)
+
+        response = self.reset_password(self.other_staff)
+
+        self.assertEqual(response.status_code, 404)
+
+        self.other_staff.refresh_from_db()
+
+        self.assertTrue(
+            self.other_staff.check_password(self.OLD_PASSWORD)
+        )
+
+        self.assertFalse(
+            AuditLog.objects.filter(
+                action='PASSWORD_RESET',
+                object_id=str(self.other_staff.pk),
+            ).exists()
+        )
 
     def test_staff_cannot_reset_manager(self):
         self.login_as(self.staff)
