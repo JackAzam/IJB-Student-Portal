@@ -28,3 +28,5 @@ staticfiles/
 *.v1.01-backup
 # Private uploaded documents - never commit
 private_uploads/
+# Migration safety and temporary backup files - never commit
+portal/migrations/*.bak
